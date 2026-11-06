@@ -6,11 +6,11 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 FILES = ("README.md", "INSTALL_FOR_AI.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "CONTRIBUTING.md", "AGENTS.md",
          ".gitignore", ".gitattributes", "profile.json", "requirements.txt", "mcp.example.json",
          "bootstrap.ps1", "install.ps1", "install.cmd", "start.cmd", "doctor.cmd")
-DIRECTORIES = ("src", "scripts", "tests", "docs", "skills", "third-party", ".github")
+DIRECTORIES = ("src", "scripts", "tests", "docs", "skills", "third-party")
 SUFFIXES = {".md", ".py", ".js", ".cjs", ".ps1", ".yml", ".yaml", ".json", ".txt"}
 
 

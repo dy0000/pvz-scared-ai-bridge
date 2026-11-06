@@ -1,0 +1,2 @@
+# Tested bridge runtime; kept exact for native compatibility.
+frida==17.22.1

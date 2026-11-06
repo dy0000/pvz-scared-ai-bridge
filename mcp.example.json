@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pvz_scared": {
+      "command": "D:/AI-Games/pvz-scared-ai-bridge/.venv/Scripts/python.exe",
+      "args": ["-X", "utf8", "D:/AI-Games/pvz-scared-ai-bridge/scripts/run_mcp.py"]
+    }
+  }
+}

@@ -3,14 +3,18 @@ import json
 import sys
 from pathlib import Path
 
-from install import ROOT, mcp_smoke, verify_game
+from install import ROOT, mcp_smoke, validate_game_path
 
 
 def main():
     import frida
     config = json.loads((ROOT / "config.local.json").read_text(encoding="utf8"))
-    verify_game(Path(config["game_executable"]))
-    print("Game build: pinned Windows PVZ-Scared 1.0.1, SHA256 OK")
+    game = Path(config["game_executable"])
+    if game.exists():
+        validate_game_path(game)
+        print("Game files present. Version/hash is not an installation requirement.")
+    else:
+        print("Game not linked yet. Open PVZ-Scared, then run start.cmd.")
     print(f"Python: {sys.version.split()[0]}, Frida: {frida.__version__}")
     print(f"MCP: initialize + tools/list OK ({mcp_smoke(sys.executable)} tools)")
     print(f"AI configuration: {ROOT / 'generated/mcp.json'}")

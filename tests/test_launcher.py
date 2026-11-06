@@ -15,24 +15,43 @@ $global:fixtureRoot=$Root
 $global:fixtureOccupied=$false
 function Write-FixtureConnection([string]$State='ready',[int]$Owner=123456) {
     $global:fixtureOccupied=$true
-    @{host='127.0.0.1';port=47633;game='PVZ-Scared';executable=(Join-Path $global:fixtureRoot 'game\PVZ-Scared.exe');session_id='test-session';token='test-token';host_pid=$Owner;pid=234567;state=$State} |
+    $game = Join-Path $global:fixtureRoot 'game\PVZ-Scared.exe'
+    $settings = Join-Path $global:fixtureRoot 'config.local.json'
+    if (Test-Path -LiteralPath $settings) { $game = (Get-Content -LiteralPath $settings -Raw | ConvertFrom-Json).game_executable }
+    @{host='127.0.0.1';port=47633;game='PVZ-Scared';executable=$game;session_id='test-session';token='test-token';host_pid=$Owner;pid=234567;state=$State} |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $global:fixtureRoot 'runtime\connection.json')
 }
 function Get-NetTCPConnection {
     param($LocalAddress,$LocalPort,$State,$ErrorAction)
     if ($global:fixtureOccupied) { [pscustomobject]@{OwningProcess=123456} }
 }
+function Get-Process {
+    param($Name,$ErrorAction)
+    if ($global:fixtureCase -eq 'auto-discover') {
+        [pscustomobject]@{Id=234567;Path=(Join-Path $global:fixtureRoot 'running game\PVZ-Scared.exe')}
+    }
+}
 function Start-Process {
     param($FilePath,$ArgumentList,$WorkingDirectory,$WindowStyle,$RedirectStandardOutput,$RedirectStandardError,[switch]$PassThru)
+    if ($global:fixtureCase -eq 'auto-discover' -and
+        ($ArgumentList -notcontains '--pid' -or $ArgumentList -notcontains '234567')) { throw 'Expected automatic attach to the discovered exact process' }
     Set-Content -LiteralPath (Join-Path $global:fixtureRoot 'started') -Value 'started'
     Set-Content -LiteralPath $RedirectStandardError -Value 'fixture startup failure'
     $process=[pscustomobject]@{Id=123456;HasExited=$false;ExitCode=7;RefreshCount=0}
     $process | Add-Member -MemberType ScriptMethod -Name Refresh -Value {
         $this.RefreshCount++
         if ($global:fixtureCase -eq 'failure') { $this.HasExited=$true }
-        if ($global:fixtureCase -eq 'new-ready' -and $this.RefreshCount -eq 2) { Write-FixtureConnection }
+        if ($global:fixtureCase -in @('new-ready','auto-discover') -and $this.RefreshCount -eq 2) { Write-FixtureConnection }
     }
     return $process
+}
+if ($Case -eq 'auto-discover') {
+    New-Item -ItemType Directory -Path (Join-Path $Root 'running game') | Out-Null
+    New-Item -ItemType File -Path (Join-Path $Root 'running game\PVZ-Scared.exe') | Out-Null
+}
+else {
+    New-Item -ItemType Directory -Path (Join-Path $Root 'game') | Out-Null
+    New-Item -ItemType File -Path (Join-Path $Root 'game\PVZ-Scared.exe') | Out-Null
 }
 if ($Case -eq 'existing-ready') { Write-FixtureConnection }
 if ($Case -eq 'external-ready') {
@@ -92,6 +111,11 @@ class LauncherTests(unittest.TestCase):
         result, started = self.run_case('external-ready')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(started)
+
+    def test_first_start_discovers_and_attaches_an_open_game(self):
+        result, started = self.run_case('auto-discover')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(started)
 
     def test_does_not_treat_another_port_owner_as_ready(self):
         result, started = self.run_case('wrong-owner')

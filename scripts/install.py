@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import subprocess
 import sys
@@ -11,31 +10,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def verify_game(game: Path, root: Path = ROOT) -> Path:
+def validate_game_path(game: Path) -> Path:
     game = game.expanduser().resolve()
     if game.is_dir():
         game /= "PVZ-Scared.exe"
     if game.name.lower() != "pvz-scared.exe":
         raise ValueError("Select the PVZ-Scared.exe file or its containing folder.")
-    profile = json.loads((root / "profile.json").read_text(encoding="utf8"))
-    for name, expected in profile["sha256"].items():
+    required = ("PVZ-Scared.exe", "GameAssembly.dll", "UnityPlayer.dll",
+                "PVZ-Scared_Data/il2cpp_data/Metadata/global-metadata.dat")
+    for name in required:
         path = game.parent / name
         if not path.is_file():
-            raise ValueError(f"Game file missing: {name}. Extract the complete Windows 1.0.1 game first.")
-        with path.open("rb") as stream:
-            actual = hashlib.file_digest(stream, "sha256").hexdigest()
-        if actual != expected:
-            raise ValueError(f"Unsupported game file: {name}. This bridge supports only the pinned Windows 1.0.1 build; do not bypass the hash check.")
+            raise ValueError(f"Game file missing: {name}. Extract the complete Windows game first.")
     return game
 
 
-def write_configuration(game: Path, root: Path = ROOT) -> None:
+def write_configuration(game: Path | None, root: Path = ROOT) -> None:
     generated = root / "generated"
     generated.mkdir(exist_ok=True)
     python = str(root / ".venv" / "Scripts" / "python.exe")
     server = {"command": python, "args": ["-X", "utf8", str(root / "scripts" / "run_mcp.py")]}
     (root / "config.local.json").write_text(json.dumps(
-        {"game_executable": str(game)}, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
+        {"game_executable": str(game or root / "game/PVZ-Scared.exe")}, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
     (generated / "mcp.json").write_text(json.dumps(
         {"mcpServers": {"pvz_scared": server}}, ensure_ascii=False, indent=2) + "\n", encoding="utf8")
     # JSON basic strings are also TOML basic strings for these Windows paths/arguments.
@@ -74,7 +70,7 @@ def mcp_smoke(python: str, root: Path = ROOT) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--game", required=True, type=Path)
+    parser.add_argument("--game", type=Path, help="Optional game directory; installation also works before the game is available")
     args = parser.parse_args()
     if sys.platform != "win32" or sys.version_info[:2] != (3, 12) or sys.maxsize <= 2**32:
         raise SystemExit("Use Windows with 64-bit Python 3.12.")
@@ -91,8 +87,8 @@ def main() -> None:
             msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
         except OSError:
             raise SystemExit("The bridge is running. Release control and stop this project's host before installing updates.")
-        print("[1/4] Checking game files (read-only)...", flush=True)
-        game = verify_game(args.game)
+        print("[1/4] Linking game (optional, no version/hash requirement)...", flush=True)
+        game = validate_game_path(args.game) if args.game else None
         python = ROOT / ".venv/Scripts/python.exe"
         print("[2/4] Preparing project Python environment...", flush=True)
         if not python.exists():
@@ -103,7 +99,11 @@ def main() -> None:
         print("[4/4] Writing configuration and checking MCP...", flush=True)
         write_configuration(game)
         count = mcp_smoke(str(python))
-        print(f"MCP handshake OK: {count} tools. Game files verified. No game controller started.")
+        print(f"MCP handshake OK: {count} tools. No game controller started.")
+        if game:
+            print(f"Game linked: {game}. Runtime compatibility is checked when connecting, not during installation.")
+        else:
+            print("Installed without a game path. Open PVZ-Scared and run start.cmd to link it automatically.")
 
 
 if __name__ == "__main__":

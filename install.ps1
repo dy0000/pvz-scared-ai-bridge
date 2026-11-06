@@ -34,12 +34,21 @@ function Find-Python312 {
 try {
     Write-Host 'PVZ Scared AI Bridge - preparing your AI game bridge'
     if (-not $GamePath) {
+        $settings = Join-Path $projectRoot 'config.local.json'
+        if (Test-Path -LiteralPath $settings) {
+            $savedGame = (Get-Content -LiteralPath $settings -Raw | ConvertFrom-Json).game_executable
+            if ($savedGame -and (Test-Path -LiteralPath $savedGame)) { $GamePath = $savedGame }
+        }
+    }
+    if (-not $GamePath) {
         $bundled = Join-Path $projectRoot 'game\PVZ-Scared.exe'
         if (Test-Path -LiteralPath $bundled) { $GamePath = $bundled }
-        elseif ($NonInteractive) { throw 'Pass -GamePath with the full game folder or PVZ-Scared.exe path.' }
-        else { $GamePath = (Read-Host 'Paste the game folder or PVZ-Scared.exe path').Trim().Trim('"') }
+        else {
+            $runningGames = @(Get-Process -Name 'PVZ-Scared' -ErrorAction SilentlyContinue | Where-Object Path | Select-Object -ExpandProperty Path -Unique)
+            if ($runningGames.Count -eq 1) { $GamePath = $runningGames[0] }
+        }
     }
-    if (-not (Test-Path -LiteralPath $GamePath)) { throw "Game path does not exist: $GamePath" }
+    if ($GamePath -and -not (Test-Path -LiteralPath $GamePath)) { throw "Game path does not exist: $GamePath" }
     $selectedPython = Find-Python312
     if (-not $selectedPython) {
         if ($PythonPath) { throw '-PythonPath must point to 64-bit Python 3.12.' }
@@ -51,7 +60,9 @@ try {
         $selectedPython = Find-Python312
         if (-not $selectedPython) { throw 'Python was not found after installation. Reopen the terminal and retry.' }
     }
-    & $selectedPython -X utf8 (Join-Path $projectRoot 'scripts\install.py') --game $GamePath
+    $setupArgs = @('-X','utf8',(Join-Path $projectRoot 'scripts\install.py'))
+    if ($GamePath) { $setupArgs += @('--game', $GamePath) }
+    & $selectedPython @setupArgs
     if ($LASTEXITCODE -ne 0) { throw 'Setup failed. Read the error above; no game controller was started.' }
 
     $codex = Get-Command codex -ErrorAction SilentlyContinue

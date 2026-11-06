@@ -14,7 +14,7 @@ PVZ-Scared 1.0.1
 
 ## 配置与生命周期
 
-安装器使用 Python 3.12，检查 `profile.json` 的 4 个文件 SHA256，创建 `.venv` 并安装固定版 Frida。游戏目录写入 `config.local.json`；不复制、不修改游戏。宿主未配置时仍支持 `game/PVZ-Scared.exe` 默认路径。
+安装器使用 Python 3.12，创建 `.venv` 并安装固定版 Frida。游戏目录可省略；已指定时只检查必要文件存在，不强制校验版本。游戏目录写入 `config.local.json`，不复制、不修改游戏。首次启动可以自动发现已打开的游戏，也支持 `game/PVZ-Scared.exe` 默认路径。
 
 `start.cmd` 使用 `.venv/Scripts/python.exe` 启动宿主。已有连接时，启动器核对本机地址、端口所有者、宿主 PID、游戏路径和状态后复用；`release_blocked` 不允许替换。宿主启动前再核对文件哈希及 PID 对应的 EXE 路径，拿到本项目 `controller.lock` 和独占 TCP 端口才接入。
 

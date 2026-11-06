@@ -6,7 +6,7 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 FILES = ("README.md", "INSTALL_FOR_AI.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "CONTRIBUTING.md", "AGENTS.md",
          ".gitignore", ".gitattributes", "profile.json", "requirements.txt", "mcp.example.json",
          "bootstrap.ps1", "install.ps1", "install.cmd", "start.cmd", "doctor.cmd")

@@ -10,5 +10,3 @@
 | [pvz-scared-english-patch](https://github.com/UnluckyManDev/pvz-scared-english-patch) | 原始研究参考了运行时字符串布局与分配函数位置 | MIT，Copyright (c) 2026 UnluckyManDev，保留[上游许可](third-party/pvz-scared-english-patch-MIT.txt) |
 
 `profile.json` 是与受支持构建绑定的原生类、方法与字段元数据及文件哈希，不是游戏安装包。固定 RVA 仅对该构建适用。项目不安装英文补丁，也不附带其翻译资源。
-
-README 的章节安排参考 uv 和 FastAPI；项目文案针对本项目独立编写，未使用其商标作背书。

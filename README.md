@@ -180,3 +180,7 @@ pvz-scared-ai-bridge/
 感谢《植物大战僵尸恐怖版》作者；运行时研究参考了 [UnluckyManDev 的英文补丁项目](https://github.com/UnluckyManDev/pvz-scared-english-patch)。
 
 ▶ [大肥鱼通关视频](https://www.bilibili.com/video/BV1Cixp6MEEh/)
+
+## 社区
+
+本开源项目已链接并认可 [LINUX DO 社区](https://linux.do)。
